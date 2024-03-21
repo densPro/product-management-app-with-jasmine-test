@@ -1,0 +1,6 @@
+<h2>Add Product</h2>
+<form>
+  <label>Name: <input [(ngModel)]="newProduct.name" /></label>
+  <label>Price: <input [(ngModel)]="newProduct.price" type="number" /></label>
+  <button (click)="addProduct()">Add Product</button>
+</form>
