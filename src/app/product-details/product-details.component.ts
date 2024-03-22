@@ -5,13 +5,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-
-import { Product } from '../product.model';
-import { ProductService } from '../product.service';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { take } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+
+import { Product } from '../product.model';
+import { ProductService } from '../product.service';
+import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-product-details',
@@ -39,7 +41,8 @@ export class ProductDetailsComponent {
     private productService: ProductService,
     private fb: FormBuilder,
     private _ngZone: NgZone,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
@@ -111,6 +114,19 @@ export class ProductDetailsComponent {
   }
 
   deleteProduct(): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '300px',
+      data: { message: 'Are you sure you want to delete this product?' }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.performDeleteAction();
+      }
+    });
+  }
+
+  private performDeleteAction(): void {
     this.loading = true;
     this.productService
       .deleteProduct(this.product.id)
