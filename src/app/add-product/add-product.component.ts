@@ -1,21 +1,87 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ViewChild } from '@angular/core';
 import { ProductService } from '../product.service';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { take } from 'rxjs';
+import { Product } from '../product.model';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatButtonModule,
+    MatCardModule,
+  ],
   templateUrl: './add-product.component.html',
   styleUrl: './add-product.component.css',
 })
 export class AddProductComponent {
-  newProduct: any = {};
+  productForm: FormGroup;
+  product: Product | undefined;
+  loading = false;
 
-  constructor(private productService: ProductService) {}
+  @ViewChild('autosize') autosize!: CdkTextareaAutosize;
 
-  addProduct() {
-    this.productService.addProduct(this.newProduct);
-    this.newProduct = {};
+  constructor(
+    private productService: ProductService,
+    private fb: FormBuilder,
+    private _ngZone: NgZone,
+    private router: Router
+  ) {
+    this.productForm = this.fb.group({
+      name: ['', Validators.required],
+      description: [''],
+      price: [null, Validators.required],
+    });
+  }
+
+  ngOnInit(): void {
+  }
+
+  triggerResize() {
+    // Wait for changes to be applied, then trigger textarea resize.
+    this._ngZone.onStable
+      .pipe(take(1))
+      .subscribe(() => this.autosize.resizeToFitContent(true));
+  }
+
+  addProduct(): void {
+    if (this.productForm.valid) {
+      const formData = {
+        ...this.productForm.value,
+        id: this.product?.id,
+      } as Product;
+
+      this.loading = true;
+      this.productService
+        .addProduct(formData)
+        .pipe(take(1))
+        .subscribe({
+          next: (response) => {
+            this.loading = false;
+            this.productForm.reset();
+            this.router.navigateByUrl(`/`);
+          },
+          error: (error) => {
+            this.loading = false;
+          },
+        });
+    } else {
+      this.productForm.markAllAsTouched();
+    }
+  }
+
+  cancel(): void {
+    this.router.navigateByUrl(`/`);
   }
 }
