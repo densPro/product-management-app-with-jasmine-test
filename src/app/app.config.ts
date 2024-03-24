@@ -5,12 +5,19 @@ import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideStore } from '@ngrx/store';
+import { headerReducer } from './ngrx/reducers/header.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    importProvidersFrom(BrowserModule),
-    importProvidersFrom(BrowserAnimationsModule),
+    importProvidersFrom(
+      BrowserModule,
+      BrowserAnimationsModule
+    ),
     provideRouter(routes),
     provideHttpClient(),
+    provideStore({
+      header: headerReducer,
+    }),
   ],
 };

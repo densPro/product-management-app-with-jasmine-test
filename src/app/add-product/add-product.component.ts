@@ -1,5 +1,4 @@
 import { Component, NgZone, ViewChild } from '@angular/core';
-import { ProductService } from '../product.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
@@ -7,9 +6,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { take } from 'rxjs';
-import { Product } from '../product.model';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+
+import * as fromActions from '../ngrx/actions/header.actions';
+import { Product } from '../product.model';
+import { ProductService } from '../product.service';
 
 @Component({
   selector: 'app-add-product',
@@ -36,16 +39,15 @@ export class AddProductComponent {
     private productService: ProductService,
     private fb: FormBuilder,
     private _ngZone: NgZone,
-    private router: Router
+    private router: Router,
+    private store: Store,
   ) {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       description: [''],
       price: [null, Validators.required],
     });
-  }
-
-  ngOnInit(): void {
+    this.store.dispatch(fromActions.updateHeaderTitle({ title: 'Add Product' }));
   }
 
   triggerResize() {

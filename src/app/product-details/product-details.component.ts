@@ -8,12 +8,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
-import { take } from 'rxjs';
+import { finalize, take } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { MatDialog } from '@angular/material/dialog';
 
 import { Product } from '../product.model';
 import { ProductService } from '../product.service';
 import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
+import * as fromActions from '../ngrx/actions/header.actions';
 
 @Component({
   selector: 'app-product-details',
@@ -40,15 +42,19 @@ export class ProductDetailsComponent {
     private route: ActivatedRoute,
     private productService: ProductService,
     private fb: FormBuilder,
-    private _ngZone: NgZone,
+    public _ngZone: NgZone,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private store: Store
   ) {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       description: [''],
       price: [null, Validators.required],
     });
+    this.store.dispatch(
+      fromActions.updateHeaderTitle({ title: 'Edit Product' })
+    );
   }
 
   ngOnInit(): void {
@@ -58,22 +64,27 @@ export class ProductDetailsComponent {
 
   loadProduct(productId: number): void {
     this.loading = true;
-    this.productService.getProduct(productId).subscribe(
-      (product: Product) => {
-        this.product = product;
-        this.productForm.patchValue({
-          name: product.name,
-          description: product.description,
-          price: product.price,
-        });
-        this.loading = false;
-        this.triggerResize();
-      },
-      (error) => {
-        console.error('Error loading product:', error);
-        this.loading = false;
-      }
-    );
+    this.productService
+      .getProduct(productId)
+      .pipe(
+        take(1),
+        finalize(() => this.loading = false)) 
+      .subscribe({
+        next: (product: Product) => {
+          this.product = product;
+          this.productForm.patchValue({
+            name: product.name,
+            description: product.description,
+            price: product.price,
+          });
+          this.loading = false;
+          this.triggerResize();
+        },
+        error: (error) => {
+          console.error('Error loading product:', error);
+          this.loading = false;
+        },
+      });
   }
 
   triggerResize() {
@@ -116,10 +127,10 @@ export class ProductDetailsComponent {
   deleteProduct(): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       width: '300px',
-      data: { message: 'Are you sure you want to delete this product?' }
+      data: { message: 'Are you sure you want to delete this product?' },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.performDeleteAction();
       }
